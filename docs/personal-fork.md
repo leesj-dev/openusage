@@ -3,7 +3,7 @@
 This fork includes Codex's compressed `.jsonl.zst` session history in local spend estimates
 ([upstream issue #1388](https://github.com/robinebers/openusage/issues/1388)).
 
-Run **Actions → Build personal fork → Run workflow** on the desired branch. The macOS runner
+Pushing to `codex/read-compressed-rollouts` runs **Actions → Build personal fork**. The macOS runner
 tests the source and builds a self-contained app. Download the **OpenUsage-fork** artifact,
 extract its ZIP, quit OpenUsage, and open the included app. Building locally requires full Xcode:
 

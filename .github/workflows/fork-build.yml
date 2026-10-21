@@ -1,6 +1,8 @@
 name: Build personal fork
 
 on:
+  push:
+    branches: [codex/read-compressed-rollouts]
   workflow_dispatch:
 
 permissions:
