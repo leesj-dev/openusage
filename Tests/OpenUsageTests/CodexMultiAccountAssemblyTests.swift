@@ -240,7 +240,7 @@ final class CodexMultiAccountAssemblyTests: XCTestCase {
         XCTAssertEqual(candidate.auth.tokens?.accountID, "acct-home")
     }
 
-    func testCatalogGivesPiUsageToThePiDefaultLoginAndKeepsPiReadOnly() async {
+    func testCatalogKeepsOneUnifiedHistoryAndPiCredentialsPerAccount() async {
         let files = FakeFiles([
             "/Users/dev/.codex/auth.json": Fixtures.codexAuth(accountID: "A", email: "a@test"),
             "/Users/dev/.codex-b/auth.json": Fixtures.codexAuth(accountID: "B", email: "b@test"),
@@ -251,7 +251,9 @@ final class CodexMultiAccountAssemblyTests: XCTestCase {
             .compactMap { $0 as? CodexProvider }
 
         XCTAssertEqual(providers.count, 2)
-        XCTAssertEqual(providers.map(\.historyScope.claimsPiUsage), [true, false])
+        XCTAssertEqual(providers.map(\.includesLocalHistory), [true, false])
+        XCTAssertTrue(providers.allSatisfy { $0.historyScope == .allHomes })
+        XCTAssertEqual(providers.filter { $0.widgetDescriptors.contains(where: \.isSpendTile) }.map(\.provider.id), ["codex"])
         XCTAssertEqual(providers.map { $0.authStore.piCredentialSources.count }, [1, 1])
     }
 

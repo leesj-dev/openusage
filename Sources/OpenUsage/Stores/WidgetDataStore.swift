@@ -12,6 +12,7 @@ struct StalenessHint: Equatable {
 @MainActor
 @Observable
 final class WidgetDataStore {
+    var beforeRefresh: (@MainActor () async -> Void)?
     private let registry: WidgetRegistry
     private let providersByID: [String: ProviderRuntime]
     private let cache: ProviderSnapshotCache
@@ -180,7 +181,18 @@ final class WidgetDataStore {
         // identity is unresolved (logged out, keyring-mode Codex) can't be verified either way — it
         // keeps its cache, exactly as before the guard existed. Non-account providers are unaffected.
         let loaded = cache.loadSnapshots(providerIDs: registry.providers.map(\.id))
-            .filter { cardID, _ in
+            .mapValues { snapshot in
+                CodexHistoryCompatibility.cachedSnapshot(
+                    snapshot,
+                    ownsHistory: registry.historyDescriptorsByProvider[snapshot.providerID] != nil,
+                    staleIdentity: cache.hasStaleAccountStamp(
+                        providerID: snapshot.providerID, currentIdentityKey: providerIdentityKeys[snapshot.providerID]
+                    )
+                )
+            }
+            .filter { cardID, snapshot in
+                if cardID == "codex", registry.historyDescriptorsByProvider[cardID] != nil,
+                   snapshot.usageHistory != nil { return true }
                 guard cache.hasStaleAccountStamp(providerID: cardID, currentIdentityKey: providerIdentityKeys[cardID]) else {
                     return true
                 }
@@ -204,6 +216,7 @@ final class WidgetDataStore {
     /// `force` bypasses the snapshot cache (the manual "refresh now" path); the periodic loop keeps
     /// honoring it.
     func refreshAll(force: Bool = false) async {
+        await beforeRefresh?()
         // `Task {}` from MainActor context inherits the isolation (a task-group child can't capture
         // the non-Sendable store), so: fire one task per provider, then await them all.
         let providerIDs = registry.providers.map(\.id).filter { isProviderEnabled($0) }
@@ -308,7 +321,10 @@ final class WidgetDataStore {
             providerID: providerID,
             currentIdentityKey: providerIdentityKeys[providerID]
         )
-        if !force, !staleAccountStamp, let cached = cache.snapshot(providerID: providerID) {
+        if !force, !staleAccountStamp, let raw = cache.snapshot(providerID: providerID) {
+            let cached = CodexHistoryCompatibility.cachedSnapshot(
+                raw, ownsHistory: registry.historyDescriptorsByProvider[providerID] != nil, staleIdentity: false
+            )
             // Skip the no-op write: `@Observable` doesn't compare values, so unconditionally
             // re-assigning an unchanged snapshot would re-render the menu-bar label every pass.
             AppLog.debug(.refresh, "cache hit \(providerID)")
@@ -460,7 +476,7 @@ final class WidgetDataStore {
                         continue
                     }
                 }
-                if ProviderAccountID.family(of: providerID) == "codex",
+                if providerID != "codex", ProviderAccountID.family(of: providerID) == "codex",
                    let identity = providerIdentityKeys[providerID], identity.contains("|") {
                     guard CodexAccountIdentity.isComplete(key: identity) else { continue }
                     identities[providerID] = identity.lowercased()
@@ -537,7 +553,7 @@ final class WidgetDataStore {
             localSnapshots: localSnapshots,
             peerDocuments: peerHistoryDocuments,
             descriptors: enabledDescriptors,
-            providerIdentityKeys: providerIdentityKeys,
+            providerIdentityKeys: providerIdentityKeys.filter { $0.key != "codex" },
             now: renderDate
         )
         var rendered = localSnapshots

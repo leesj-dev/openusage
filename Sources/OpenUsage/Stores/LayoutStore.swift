@@ -40,6 +40,9 @@ final class LayoutStore {
     /// Persisted provider display order (provider IDs). Drives both the dashboard groups and the
     /// Customize sections, so the user can drag whole providers into the order they want.
     var providerOrder: [String]
+    /// Presentation only: account order and pins on disk stay attached to their original cards.
+    var codexAccountIDs: Set<String> = []
+    var activeCodexProviderID: String?
     /// Persisted metric order within each provider. Toggle switches do not mutate this, so turning a metric on
     /// or off never makes rows jump around in Customize.
     var metricOrderByProvider: [String: [String]]

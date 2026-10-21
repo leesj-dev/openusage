@@ -61,7 +61,8 @@ enum ProviderCatalog {
                         writableAuthHomes: Set(card.writableAuthHomes),
                         piCredentialSources: card.piCredentialSources
                     ),
-                    historyScope: .account(card.identity, codex.historyHomes, claimsPiUsage: card.claimsPiUsage)
+                    logUsageScanner: CodexLogUsageScanner(additionalHomes: codex.historyHomes.homes),
+                    includesLocalHistory: card.id == "codex"
                 )
             }
         }

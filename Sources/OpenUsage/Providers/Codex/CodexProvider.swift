@@ -11,6 +11,7 @@ final class CodexProvider: ProviderRuntime {
 
     let provider: Provider
     let historyScope: CodexHistoryScope
+    let includesLocalHistory: Bool
 
     private let localHistory = CodexHistoryRefresh<CodexLocalHistory>()
     let localHistoryWait: Duration
@@ -33,6 +34,7 @@ final class CodexProvider: ProviderRuntime {
         piUsageScanner: PiUsageScanner = .shared,
         openCodeUsageScanner: OpenCodeCodexUsageScanner = OpenCodeCodexUsageScanner(),
         historyScope: CodexHistoryScope = .allHomes,
+        includesLocalHistory: Bool = true,
         now: @escaping @Sendable () -> Date = Date.init,
         pricing: @escaping @Sendable () async -> ModelPricing = { await ModelPricingStore.shared.current() },
         fallbackModel: @escaping @MainActor () -> String? = { CodexFallbackModelSetting.current() }
@@ -40,6 +42,7 @@ final class CodexProvider: ProviderRuntime {
         self.localHistoryWait = localHistoryWait
         self.provider = provider
         self.historyScope = historyScope
+        self.includesLocalHistory = includesLocalHistory
         self.authStore = authStore
         self.usageClient = usageClient
         self.logUsageScanner = logUsageScanner
@@ -51,7 +54,7 @@ final class CodexProvider: ProviderRuntime {
     }
 
     var widgetDescriptors: [WidgetDescriptor] {
-        [
+        let limits: [WidgetDescriptor] = [
             .percent(id: "\(provider.id).session", provider: provider, title: "Session")
                 .exportingLimit("session", unit: "percent"),
             .percent(id: "\(provider.id).weekly", provider: provider, title: "Weekly")
@@ -67,7 +70,10 @@ final class CodexProvider: ProviderRuntime {
                 .exportingLimit("credits", kind: .balance, unit: "credits", source: .value(kind: .count, label: "credits"))
                 .exportingLimit("creditValue", kind: .balance, unit: "usd", source: .value(kind: .dollars)),
             .values(id: "\(provider.id).rateLimitResets", provider: provider, title: "Rate Limit Resets", metricLabel: "Rate Limit Resets", traySuffix: "resets", showsResetExpiries: true)
-                .exportingLimit("rateLimitResets", kind: .balance, unit: "resets", source: .value(kind: .count, label: "available")),
+                .exportingLimit("rateLimitResets", kind: .balance, unit: "resets", source: .value(kind: .count, label: "available"))
+        ]
+        guard includesLocalHistory else { return limits }
+        return limits + [
             .usageTrend(provider: provider)
                 .exportingHistory(
                     scope: .machineLocal,
@@ -176,6 +182,9 @@ final class CodexProvider: ProviderRuntime {
     }
 
     func snapshot(mapped initial: CodexMappedUsage) async -> ProviderSnapshot {
+        guard includesLocalHistory else {
+            return ProviderSnapshot.make(provider: provider, plan: initial.plan, lines: initial.lines, refreshedAt: now())
+        }
         var mapped = initial
         // pi logs name a provider family, not an account card.
         let piCardID = ProviderAccountID.family(of: provider.id)

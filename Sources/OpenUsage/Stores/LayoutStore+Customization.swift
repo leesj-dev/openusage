@@ -53,7 +53,13 @@ extension LayoutStore {
     /// provider's metrics kept in the provider's custom metric order. Drives the grouped dashboard list; providers with
     /// no visible metric are dropped so the dashboard only shows groups that have something to show.
     var displayGroups: [ProviderGroup] {
-        orderedProviders().compactMap { provider in
+        var providers = orderedProviders()
+        if let active = activeCodexProviderID,
+           let first = providers.firstIndex(where: { codexAccountIDs.contains($0.id) }),
+           let index = providers.firstIndex(where: { $0.id == active }) {
+            providers.insert(providers.remove(at: index), at: first)
+        }
+        return providers.compactMap { provider in
             let widgetsByDescriptor = Dictionary(
                 visiblePlaced
                     .filter { providerID(of: $0) == provider.id }
@@ -141,6 +147,21 @@ extension LayoutStore {
     var pinnedGroups: [ProviderMetrics] {
         orderedProviders().compactMap { provider in
             guard isProviderEnabled(provider.id) else { return nil }
+            if codexAccountIDs.contains(provider.id) {
+                guard provider.id == activeCodexProviderID else { return nil }
+                // Existing pins select metric kinds; the live login supplies their values.
+                let suffixes = Set(pinnedMetricIDs.compactMap { id -> String? in
+                    guard let descriptor = registry.descriptor(id: id),
+                          codexAccountIDs.contains(descriptor.providerID) else { return nil }
+                    return String(id.dropFirst(descriptor.providerID.count))
+                })
+                let metrics = orderedSupportedMetrics(for: provider.id)
+                    .filter { suffixes.contains(String($0.id.dropFirst(provider.id.count))) }
+                    .prefix(Self.maxPinsPerProvider)
+                return metrics.isEmpty ? nil : ProviderMetrics(
+                    provider: provider, alwaysShownMetrics: Array(metrics), expandedMetrics: []
+                )
+            }
             // Keep the strip order matching Customize: always-shown pins first, then expanded ones.
             let metrics = orderedSupportedMetrics(for: provider.id).filter { pinnedMetricIDs.contains($0.id) }
             return metrics.isEmpty ? nil : ProviderMetrics(

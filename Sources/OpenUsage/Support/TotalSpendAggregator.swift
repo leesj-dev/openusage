@@ -169,6 +169,9 @@ enum TotalSpendAggregator {
         snapshots: [String: ProviderSnapshot]
     ) -> TotalSpend {
         let slices = providers.compactMap { provider -> TotalSpendSlice? in
+            // Account cards carry live limits. Only the legacy Codex key owns combined spend,
+            // including when a caller still has a cached snapshot from an older split-history build.
+            if ProviderAccountID.family(of: provider.id) == "codex", provider.id != "codex" { return nil }
             guard let snapshot = snapshots[provider.id],
                   let line = snapshot.line(label: period.lineLabel),
                   case .values(_, let values, _, _, _, _) = line else { return nil }
@@ -181,7 +184,9 @@ enum TotalSpendAggregator {
             guard amount > 0 || tokens > 0 else { return nil }
 
             return TotalSpendSlice(
-                provider: provider,
+                provider: provider.id == "codex"
+                    ? Provider(id: provider.id, displayName: "Codex", icon: provider.icon, links: provider.links)
+                    : provider,
                 amountUSD: max(amount, 0),
                 tokenCount: max(tokens, 0),
                 estimated: dollars.contains(where: \.estimated)

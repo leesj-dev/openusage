@@ -48,8 +48,7 @@ If Codex is disabled in Customize, enable it there to show the cards.
 Connections are stored privately on this Mac under
 `~/Library/Application Support/OpenUsage/CodexAccounts/`; they aren't synced to iCloud.
 Their cards show live subscription limits even when no local session history is available.
-Adding a connection doesn't assign old Desktop session logs to that account: the folder-based
-spend attribution described below still applies.
+Adding a connection does not split or reassign old Desktop session logs. Local history stays combined.
 
 ### Existing Codex logins
 
@@ -96,28 +95,20 @@ account once in xswap or pi so the tool renews its own token, then refresh OpenU
 
 ### Whose spending goes on which card
 
-Codex session logs don't say which account ran them, so OpenUsage goes by folder: each Codex home's
-spending goes to the account signed in to that home right now.
+Codex session logs don't say which account ran them. OpenUsage therefore keeps one combined
+Codex history under the original `codex` key, including all discovered homes, pi, and OpenCode.
+Copied or shared sessions count once across homes. Switching accounts never moves or duplicates
+that history. The original Codex card owns the spend tiles and trend; additional account cards
+show live limits and reset credits only. Total Spend shows one **Codex** contribution.
 
-- An `xswap run` account home counts for its own account.
-- The main home (`~/.codex` or `$CODEX_HOME`) counts for whoever is signed in there now. After
-  `xswap switch`, that folder's whole history moves to the new account, and the old account's card
-  stops showing it on the next refresh.
-- Swap's **share history** option makes an account home reuse the main home's session folder instead
-  of keeping its own. Those sessions live in one place, so they count once, for the main home's account.
-  Share history is not fully supported: after `xswap switch`, the old account's card can keep showing
-  the spending it had before the switch, so the same spend appears on two cards.
-- A home whose login names no account counts for the account xswap registered there, or for the
-  Keychain login in the main home. Without either, it counts for no card.
-- pi spending goes to the account in pi's `openai-codex` login; after changing that login, restart
-  OpenUsage. OpenCode spending goes to the account signed in to the main home.
-
-With one account, all of this lands on its single card. Live limits and reset-credit actions work on
-every card regardless.
+The menu bar shows the current default Codex login's pinned metrics. Existing Codex metric pins
+follow that login without changing saved pin settings. The current login's card appears above the
+other Codex cards in the dashboard. Refresh OpenUsage after switching logins to update both.
 
 ## The spend tiles
 
-Copied sessions count once per card; a session copied into two accounts' folders counts on both. Synced history must match the card's account and workspace.
+Combined history retains the original storage and sync key, so older history stays compatible.
+Previously cached spend rows on additional account cards are excluded immediately at launch.
 
 **Customize → Codex → Cost Estimates → Fallback Model** optionally estimates usage that has no known price. The default is **None**. Choose a public model to use its rates for those estimates; known model prices and recorded costs remain unchanged. The existing unknown-model warning and tooltip remain visible when a fallback is used. Switching the choice recalculates local history without changing the model Codex runs. See [model pricing](../pricing.md) for details.
 
@@ -130,7 +121,7 @@ Codex's compressed `.jsonl.zst` rollouts are included from both `sessions/` and 
 even on a fresh installation. Decompression happens in memory in small chunks, using the bundled
 Zstandard library; no command-line decoder is required. Plain and compressed copies of the same
 relative rollout count once, with the active `sessions/` copy taking precedence. Compression preserves
-the recorded dates, model, service tier, replay filtering, and account-home ownership. Unreadable or
+the recorded dates, model, service tier, replay filtering, and combined history. Unreadable or
 damaged archives are logged as incomplete history and retried on the next scan.
 
 For supported GPT-5.4, GPT-5.5, GPT-5.6, and GPT-6 models, requests above 272k input tokens use OpenAI's long-context rates for the whole request. These Codex-specific request rules apply consistently to native Codex logs and zero-cost Codex OAuth usage imported from pi or OpenCode. Daybreak Blue usage is priced as GPT-5.6 Sol, matching OpenAI's published alias and Daybreak pricing. Cached input uses the published cache-read discount when the pricing source provides one; otherwise it is estimated at the full input rate. Fast/priority estimates use each model's published Codex multiplier (for example, GPT-5.5 uses 2.5×); Ultrafast is 6× for GPT-6 Astra and uses the Fast multiplier for other models. Model names ending in `-fast` are normalized to their unscaled base rate before that multiplier is applied once.

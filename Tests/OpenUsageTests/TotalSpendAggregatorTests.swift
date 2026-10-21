@@ -4,6 +4,18 @@ import XCTest
 /// Covers the Total Spend card's aggregation and metric projection: which providers contribute,
 /// how slices rank per metric, Cost/MTok math, and when the combined number counts as estimated.
 final class TotalSpendAggregatorTests: XCTestCase {
+    func testCodexUsesOneCombinedSliceEvenWithOldAccountSpendSnapshots() {
+        let combined = Provider(id: "codex", displayName: "Codex: First", icon: .providerMark("codex"))
+        let other = Provider(id: "codex@12345678", displayName: "Codex: Other", icon: .providerMark("codex"))
+        let total = TotalSpendAggregator.total(for: .today, providers: [combined, other], snapshots: [
+            combined.id: snapshot(combined, lines: [spendLine("Today", dollars: 20, tokens: 100)]),
+            other.id: snapshot(other, lines: [spendLine("Today", dollars: 20, tokens: 100)])
+        ])
+        XCTAssertEqual(total.totalUSD, 20)
+        XCTAssertEqual(total.totalTokens, 100)
+        XCTAssertEqual(total.slices.map(\.provider.displayName), ["Codex"])
+    }
+
     private let claude = Provider(id: "claude", displayName: "Claude", icon: .providerMark("claude"))
     private let codex = Provider(id: "codex", displayName: "Codex", icon: .providerMark("codex"))
     private let cursor = Provider(id: "cursor", displayName: "Cursor", icon: .providerMark("cursor"))

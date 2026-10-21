@@ -96,6 +96,17 @@ final class AppContainer {
             notificationSettings: { notificationSettings },
             providerIdentityKeys: accountAssembly.identityKeysByCard
         )
+        if !accountAssembly.codex.cards.isEmpty {
+            let cards = accountAssembly.codex.cards
+            layout.codexAccountIDs = Set(cards.map(\.id))
+            let activeAccount = CodexActiveAccount()
+            let updateActive: @MainActor () async -> Void = { [layout] in
+                let identity = await activeAccount.identity()
+                layout.activeCodexProviderID = cards.first { $0.identity == identity }?.id
+            }
+            await updateActive()
+            dataStore.beforeRefresh = updateActive
+        }
         let iCloudSync = ICloudUsageSyncStore(dataStore: dataStore)
         // Re-enabling a provider should fetch it promptly, so clear any leftover failure backoff before
         // the enablement wake refreshes. `weak` breaks the cycle (dataStore already captures enablement).
