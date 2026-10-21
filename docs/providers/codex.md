@@ -79,7 +79,8 @@ OpenUsage also finds signed-in accounts in `CODEX_HOME`, `~/.codex`, `~/.config/
 `~/.codex-*` folders, sibling `~/.config/codex-*` folders, and pi's `auth.json` (`openai-codex`,
 `openai-codex-2`, …). Logins are matched by ChatGPT workspace and email, so two users in the same
 workspace remain separate cards, and the same account signed in through several homes and pi shares
-one card, named by its xswap alias, then its pi label, then its workspace and email. A login held only
+one card, named by its xswap alias, then its pi label, then its email. A short workspace identifier
+is added only when the same email has multiple workspaces, or used alone when no email is available. A login held only
 in the Keychain counts as an account too. A single account keeps the plain Codex card, which still
 uses a login found only in a sibling home or in pi, and counts that home's session logs in its
 spend tiles. Restart OpenUsage after adding or removing a login.

@@ -59,11 +59,15 @@ extension ProviderAccountAssembly {
         var identities: [CodexAccountIdentity] = []
         var labels: [String: String] = [:]
         var namedByTool = Set<String>()
+        let knownIdentities = Set(homeLogins.map(\.identity) + swaps.map(\.identity)
+            + piScan.logins.map(\.identity) + [keychainIdentity].compactMap { $0 })
 
         func label(for identity: CodexAccountIdentity, preferred: String? = nil) -> String {
             if let preferred = preferred?.nilIfEmpty { return "Codex: \(preferred)" }
             let workspace = identity.accountID.isEmpty ? "Unknown" : String(identity.accountID.prefix(8))
-            return "Codex: Workspace \(workspace) (\(identity.email ?? identity.accountID))"
+            guard let email = identity.email else { return "Codex: Workspace \(workspace)" }
+            let needsWorkspace = knownIdentities.contains { $0.email == email && $0 != identity }
+            return needsWorkspace ? "Codex: \(email) (\(workspace))" : "Codex: \(email)"
         }
 
         /// A name the user chose in xswap or pi beats the generic workspace label; the first such name wins.
@@ -98,11 +102,11 @@ extension ProviderAccountAssembly {
             assignedDefault = true
         }
         for swap in swaps {
-            observe(swap.identity, label: swap.displayName, named: swap.alias != nil,
+            observe(swap.identity, label: swap.alias != nil ? swap.displayName : label(for: swap.identity), named: swap.alias != nil,
                     source: .init(kind: .codexSwap, anchor: swap.home, holdsDefaultSource: false))
         }
         for login in piScan.logins {
-            observe(login.identity, label: label(for: login.identity, preferred: login.label ?? login.identity.email),
+            observe(login.identity, label: label(for: login.identity, preferred: login.label),
                     named: login.label != nil,
                     source: .init(kind: .pi, anchor: login.providerID, holdsDefaultSource: false))
         }

@@ -53,6 +53,21 @@ final class CodexMultiAccountAssemblyTests: XCTestCase {
         XCTAssertEqual(assembly.identityKeysByCard["codex"], "acct-a")
     }
 
+    func testAccountCardsLeadWithEmailAndOnlyDisambiguateSharedEmails() async {
+        for email in ["bob@test", "alice@test"] {
+            let files = FakeFiles([
+                "/Users/dev/.codex/auth.json": Fixtures.codexAuth(accountID: "ACCT-A", email: "alice@test"),
+                "/Users/dev/.codex-work/auth.json": Fixtures.codexAuth(accountID: "ACCT-B", email: email),
+            ])
+            let assembly = await assemble(files: files, directories: ["/Users/dev": [".codex-work"]])
+            let names = Set(assembly.codexCards.map(\.displayName))
+            let expected: Set<String> = email == "alice@test"
+                ? ["Codex: alice@test (acct-a)", "Codex: alice@test (acct-b)"]
+                : ["Codex: alice@test", "Codex: bob@test"]
+            XCTAssertEqual(names, expected)
+        }
+    }
+
     func testIncompletePiLoginBesideOnePlainAccountKeepsLocalHistory() async {
         let files = FakeFiles([
             "/Users/dev/.codex/auth.json": Fixtures.codexAuth(accountID: "ACCT-A", email: "alice@test"),
