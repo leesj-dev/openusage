@@ -32,6 +32,7 @@ let package = Package(
             ],
             path: "Sources/OpenUsage",
             resources: [
+                .copy("Resources/zstd-LICENSE.txt"),
                 .copy("Resources/ProviderIcons"),
                 .copy("Resources/pricing_supplement.json"),
                 .copy("Resources/pricing_litellm_snapshot.json"),
