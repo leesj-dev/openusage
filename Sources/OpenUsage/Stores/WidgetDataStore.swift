@@ -467,6 +467,7 @@ final class WidgetDataStore {
         } > 1
         for (providerID, descriptor) in registry.historyDescriptorsByProvider
         where descriptor.scope == .machineLocal && isProviderEnabled(providerID) {
+            if ProviderAccountID.family(of: providerID) == "codex", providerID != "codex" { continue }
             if let history = localSnapshots[providerID]?.usageHistory {
                 if ProviderAccountID.family(of: providerID) == "claude" {
                     if let identity = providerIdentityKeys[providerID] {
@@ -475,11 +476,6 @@ final class WidgetDataStore {
                         AppLog.warn(.config, "sync: omitting Claude history without account ownership")
                         continue
                     }
-                }
-                if providerID != "codex", ProviderAccountID.family(of: providerID) == "codex",
-                   let identity = providerIdentityKeys[providerID], identity.contains("|") {
-                    guard CodexAccountIdentity.isComplete(key: identity) else { continue }
-                    identities[providerID] = identity.lowercased()
                 }
                 providers[providerID] = history
             }

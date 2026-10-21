@@ -50,7 +50,7 @@ final class CodexSwapMaintainerReviewTests: XCTestCase {
             #"{"plan_type":"pro","rate_limit":{"primary_window":{"used_percent":17,"limit_window_seconds":18000}}}"#.utf8))
     }
 
-    func testCodexAccountExportOmitsUnresolvedClaudeWithoutBlockingOtherProviders() throws {
+    func testCombinedCodexExportPreservesLegacyClaudeAndOtherProviders() throws {
         let defaults = try defaults()
         let providers = [ClaudeProvider().provider, CodexProvider.makeProvider(), GrokProvider().provider]
         let descriptors = providers.map {
@@ -73,7 +73,9 @@ final class CodexSwapMaintainerReviewTests: XCTestCase {
         XCTAssertNoThrow(try document.validate())
         XCTAssertNotNil(document.providers["codex"])
         XCTAssertNotNil(document.providers["grok"])
-        XCTAssertNil(document.providers["claude"])
+        XCTAssertNotNil(document.providers["claude"])
+        XCTAssertEqual(document.schema, UsageHistoryDocument.currentSchema)
+        XCTAssertNil(document.identities)
 
         let legacy = WidgetDataStore(registry: registry, providers: [], cache: cache, defaults: defaults)
             .localHistoryDocument(deviceID: "legacy", deviceName: "Legacy")

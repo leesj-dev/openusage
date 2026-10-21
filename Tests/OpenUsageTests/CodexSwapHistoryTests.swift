@@ -48,7 +48,7 @@ final class CodexSwapHistoryTests: XCTestCase {
     }
 
     @MainActor
-    func testPartialIdentitiesNeitherImportNorExportHistory() throws {
+    func testCombinedExportKeepsHistoryWithPartialIdentityAndSplitImportStillRejectsIt() throws {
         let provider = CodexProvider.makeProvider()
         let descriptor = WidgetDescriptor.usageTrend(provider: provider)
             .exportingHistory(scope: .machineLocal, estimatedCost: true, sourceNote: "logs")
@@ -64,7 +64,10 @@ final class CodexSwapHistoryTests: XCTestCase {
                         producedByIdentityKey: identity)
             let store = WidgetDataStore(registry: WidgetRegistry(providers: [provider], descriptors: [descriptor]),
                 providers: [], cache: cache, defaults: defaults, providerIdentityKeys: ["codex": identity])
-            XCTAssertNil(store.localHistoryDocument(deviceID: "local", deviceName: "Local").providers["codex"])
+            let exported = store.localHistoryDocument(deviceID: "local", deviceName: "Local")
+            XCTAssertEqual(exported.providers["codex"], history)
+            XCTAssertNil(exported.identities)
+            XCTAssertNoThrow(try exported.validate())
             let peer = UsageHistoryDocument(schema: UsageHistoryDocument.accountSchema,
                 deviceID: "peer", deviceName: "Peer", updatedAt: Date(), providers: ["codex": history],
                 identities: ["codex": identity])
@@ -76,7 +79,7 @@ final class CodexSwapHistoryTests: XCTestCase {
     }
 
     @MainActor
-    func testExportedCodexCardsIncludeTheirIdentitiesAndValidate() throws {
+    func testExportedCodexHistoryUsesOnlyLegacyKeyAndValidates() throws {
         let suite = "CodexSwapExport.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -93,8 +96,10 @@ final class CodexSwapHistoryTests: XCTestCase {
                 .exportingHistory(scope: .machineLocal, estimatedCost: true, sourceNote: "logs")
         }), providers: [], cache: cache, defaults: defaults, providerIdentityKeys: identities)
         let document = store.localHistoryDocument(deviceID: "local", deviceName: "Local")
-        XCTAssertEqual(document.schema, UsageHistoryDocument.accountSchema)
-        XCTAssertEqual(document.identities, identities)
+        XCTAssertEqual(document.schema, UsageHistoryDocument.currentSchema)
+        XCTAssertNil(document.identities)
+        XCTAssertEqual(Set(document.providers.keys), ["codex"])
+        XCTAssertEqual(document.providers["codex"], history)
         XCTAssertNoThrow(try document.validate())
     }
 }
