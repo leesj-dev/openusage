@@ -1,0 +1,35 @@
+name: Build personal fork
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Run tests
+        run: swift test
+      - name: Build local app without an upstream update feed
+        env:
+          BUNDLE_ID: com.robinebers.openusage
+        run: script/build_and_run.sh build
+      - name: Verify app and bundled decoder
+        run: |
+          codesign --verify --deep --strict dist/OpenUsage.app
+          test -z "$(otool -L dist/OpenUsage.app/Contents/MacOS/OpenUsage | sed -n '/libzstd/p')"
+          if /usr/libexec/PlistBuddy -c 'Print SUFeedURL' dist/OpenUsage.app/Contents/Info.plist; then
+            echo 'Personal fork must not update itself back to upstream' >&2
+            exit 1
+          fi
+          ditto -c -k --sequesterRsrc --keepParent dist/OpenUsage.app dist/OpenUsage-fork.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OpenUsage-fork
+          path: dist/OpenUsage-fork.zip
+          if-no-files-found: error

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Builds daily token/cost estimates for Codex by scanning the Codex CLI's local session rollouts
-/// natively (`$CODEX_HOME/sessions/**/*.jsonl` + `archived_sessions/`), replacing the external
+/// natively (`$CODEX_HOME/sessions/**/*.jsonl[.zst]` + `archived_sessions/`), replacing the external
 /// `ccusage` CLI.
 ///
 /// Ports ccusage's Codex adapter semantics:
@@ -153,7 +153,7 @@ actor CodexLogUsageScanner {
         return [homeDirectory().appendingPathComponent(".codex")] + extra
     }
 
-    /// Every rollout `*.jsonl` under each home's `sessions/` and `archived_sessions/` (a home with
+    /// Every rollout `*.jsonl` or `*.jsonl.zst` under each home's `sessions/` and `archived_sessions/` (a home with
     /// neither is scanned directly, ccusage's fallback). When both dirs of one home contain the same
     /// relative path, the `sessions/` copy wins — an archived duplicate must not double-count.
     /// A dir linked into another account's home (xswap's shared history) counts only with that home.
@@ -179,8 +179,10 @@ actor CodexLogUsageScanner {
             // resolved dir as their prefix — resolve here too or the relative keys (and the
             // cross-home dir dedup) stop matching for symlinked Codex homes.
             for dir in sourceDirs.map({ $0.resolvingSymlinksInPath() }) where seenDirs.insert(dir.path).inserted {
-                for file in JSONLScanning.jsonlFiles(under: dir) {
-                    let relative = String(file.path.dropFirst(dir.path.count))
+                for file in JSONLScanning.jsonlFiles(under: dir, includeCompressed: true) {
+                    let rolloutPath = file.path.hasSuffix(".jsonl.zst")
+                        ? String(file.path.dropLast(4)) : file.path
+                    let relative = String(rolloutPath.dropFirst(dir.path.count))
                     guard seenRelative.insert(relative).inserted else { continue }
                     files.append(file)
                 }

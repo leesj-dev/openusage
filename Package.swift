@@ -11,6 +11,8 @@ let package = Package(
         .executable(name: "openusage-cli", targets: ["OpenUsageCLI"])
     ],
     dependencies: [
+        // Decode Codex's compressed rollouts in-process, without requiring a Homebrew executable.
+        .package(url: "https://github.com/facebook/zstd", exact: "1.5.7"),
         // The de-facto standard recorder + global hotkey for Mac apps (System Settings-style field).
         .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", from: "3.0.1"),
         // In-app auto-updates (appcast + EdDSA-signed downloads). 2.9.4 fixes the update window opening
@@ -23,6 +25,7 @@ let package = Package(
         .target(
             name: "OpenUsage",
             dependencies: [
+                .product(name: "libzstd", package: "zstd"),
                 .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
                 .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "PostHog", package: "posthog-ios")

@@ -102,6 +102,13 @@ Today / Yesterday / Last 30 Days are computed **locally**: OpenUsage reads the C
 Large session files are read in small chunks instead of being loaded into memory. Unusually large
 individual records are skipped and logged; local spend can be incomplete if a skipped record contained usage.
 
+Codex's compressed `.jsonl.zst` rollouts are included from both `sessions/` and `archived_sessions/`,
+even on a fresh installation. Decompression happens in memory in small chunks, using the bundled
+Zstandard library; no command-line decoder is required. Plain and compressed copies of the same
+relative rollout count once, with the active `sessions/` copy taking precedence. Compression preserves
+the recorded dates, model, service tier, replay filtering, and account-home ownership. Unreadable or
+damaged archives are logged as incomplete history and retried on the next scan.
+
 For supported GPT-5.4, GPT-5.5, GPT-5.6, and GPT-6 models, requests above 272k input tokens use OpenAI's long-context rates for the whole request. These Codex-specific request rules apply consistently to native Codex logs and zero-cost Codex OAuth usage imported from pi or OpenCode. Daybreak Blue usage is priced as GPT-5.6 Sol, matching OpenAI's published alias and Daybreak pricing. Cached input uses the published cache-read discount when the pricing source provides one; otherwise it is estimated at the full input rate. Fast/priority estimates use each model's published Codex multiplier (for example, GPT-5.5 uses 2.5×); Ultrafast is 6× for GPT-6 Astra and uses the Fast multiplier for other models. Model names ending in `-fast` are normalized to their unscaled base rate before that multiplier is applied once.
 
 ## Troubleshooting

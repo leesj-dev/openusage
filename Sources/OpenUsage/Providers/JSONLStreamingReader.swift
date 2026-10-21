@@ -25,12 +25,27 @@ enum JSONLStreamingReader {
         if let upTo {
             precondition(upTo >= startingAt)
         }
+        if path.hasSuffix(".jsonl.zst") {
+            // Compressed byte offsets cannot resume a decompressed JSONL parser.
+            precondition(startingAt == 0 && upTo == nil)
+            let stream = try ZstandardLogReader(path: path)
+            return try readBatches(startingAt: 0, upTo: nil, initialState: initialState,
+                                   nextChunk: { try stream.read(upToCount: $0) }, parse: parse)
+        }
         let handle = try FileHandle(forReadingFrom: URL(fileURLWithPath: path))
         defer { try? handle.close() }
         if startingAt > 0 {
             try handle.seek(toOffset: UInt64(startingAt))
         }
+        return try readBatches(startingAt: startingAt, upTo: upTo, initialState: initialState,
+                               nextChunk: { try handle.read(upToCount: $0) }, parse: parse)
+    }
 
+    private static func readBatches<Item: Sendable, State: Sendable>(
+        startingAt: Int, upTo: Int?, initialState: State,
+        nextChunk: (Int) throws -> Data?,
+        parse: @Sendable (Data, inout State) -> [Item]?
+    ) throws -> Result<Item, State> {
         var state = initialState
         var items: [Item] = []
         var pendingRecord = Data()
@@ -76,7 +91,7 @@ enum JSONLStreamingReader {
             try Task.checkCancellation()
             let readCount = upTo.map { min(readChunkBytes, max(0, $0 - streamOffset)) } ?? readChunkBytes
             guard readCount > 0,
-                  let chunk = try handle.read(upToCount: readCount),
+                  let chunk = try nextChunk(readCount),
                   !chunk.isEmpty
             else { break }
             readAnyBytes = true
