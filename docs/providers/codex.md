@@ -30,6 +30,29 @@ If Codex reports only a 7-day window, it maps to Weekly without inventing a 5-ho
 
 ## Where credentials come from
 
+### Connect accounts in OpenUsage
+
+If you use Codex Desktop, open **Settings → Codex Accounts → Add Codex Account…**.
+Sign in in your browser, repeat for each account, then choose **Restart OpenUsage**.
+You don't need to install or use the CLI. Codex Desktop must be installed: OpenUsage uses its
+bundled login helper to create a separate connection for each account.
+
+These connections stay separate from Desktop's current login. You can switch accounts in Desktop
+while OpenUsage keeps checking each connected account's limits. OpenUsage renews its own connections;
+if a session is revoked or expires, use **Reconnect** for that account. Reconnecting with a different
+account leaves the saved connection unchanged. **Disconnect** removes only OpenUsage's connection,
+not the Desktop login. Apply connection changes with **Restart OpenUsage**. Accounts that are also
+signed in through another supported source keep their shared card while that source is available.
+If Codex is disabled in Customize, enable it there to show the cards.
+
+Connections are stored privately on this Mac under
+`~/Library/Application Support/OpenUsage/CodexAccounts/`; they aren't synced to iCloud.
+Their cards show live subscription limits even when no local session history is available.
+Adding a connection doesn't assign old Desktop session logs to that account: the folder-based
+spend attribution described below still applies.
+
+### Existing Codex logins
+
 Sign in once with the Codex CLI (`codex`); OpenUsage reads the same auth files (`$CODEX_HOME` respected) with a Keychain fallback. The first Keychain read can ask you to grant OpenUsage access; choosing **Always Allow** authorizes the signed app for later background reads. macOS may ask once more after Codex renews its Keychain login. If you choose **Deny**, OpenUsage stops asking until you refresh manually. Tokens refresh automatically and rotate back into the same auth file or Keychain item they came from.
 
 The Keychain fallback selects the Codex CLI item for `$CODEX_HOME` (or `~/.codex` when unset), including when that home is a symlink. Other Codex homes can have separate Keychain logins; OpenUsage does not pick an unrelated item just because it has the same service name.

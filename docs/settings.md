@@ -20,6 +20,15 @@ same iCloud account. Settings shows the five-minute write cadence and each Mac's
 time; it also reports unavailable iCloud, loading, write, and malformed-file states. See
 [iCloud Sync](icloud-sync.md) for what is included and which surfaces use the combined values.
 
+## Codex Accounts
+
+Use **Add Codex Account…** to connect each account in your browser without using the CLI.
+Codex Desktop must be installed. Saved connections let OpenUsage check each account's limits
+independently of which account is currently signed in to Desktop.
+Use **Reconnect** when a saved login stops working, or **Disconnect** to remove OpenUsage's saved
+connection. Choose **Restart OpenUsage** after changing connections to update the cards.
+See [Codex](providers/codex.md) for credential storage and local spend attribution.
+
 ## Appearance
 
 | Setting | Options | What it does |

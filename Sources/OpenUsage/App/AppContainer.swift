@@ -7,6 +7,7 @@ import Observation
 @MainActor
 @Observable
 final class AppContainer {
+    let codexConnections = CodexConnectionStore()
     let registry: WidgetRegistry
     let layout: LayoutStore
     let dataStore: WidgetDataStore

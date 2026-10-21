@@ -39,6 +39,13 @@ Turning the toggle off stops these extra events. Daily activity and crash report
 
 ## Credentials stored on this Mac
 
+Connecting a Codex account in Settings opens OpenAI's sign-in page through the login helper bundled
+with Codex Desktop. OpenUsage saves that new connection separately from Desktop, in
+`~/Library/Application Support/OpenUsage/CodexAccounts/`, and refreshes it to keep checking limits.
+Credential files allow only owner reads and writes, and connection folders allow only owner access.
+These credentials never enter analytics or iCloud. Disconnecting deletes the saved connection on this
+Mac without logging Desktop out. Sign-in URLs and raw login-helper output are never logged.
+
 OpenUsage primarily reads credentials that provider tools already keep on your Mac. When it writes a
 user-supplied API key or saves a refreshed credential, the file is replaced atomically and restricted to
 your macOS account (owner read and write only). Antigravity's short-lived refreshed-token cache is tied

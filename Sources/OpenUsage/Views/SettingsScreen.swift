@@ -54,6 +54,7 @@ struct SettingsScreen: View {
         // Same section rhythm as the dashboard and Customize (all read the density setting).
         VStack(alignment: .leading, spacing: density.sectionSpacing) {
             generalSection
+            CodexAccountsSettingsSection(connections: container.codexConnections)
             ICloudSyncSettingsSection(sync: container.iCloudSync)
             appearanceSection
             usageDisplaySection

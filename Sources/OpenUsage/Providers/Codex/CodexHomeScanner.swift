@@ -71,8 +71,13 @@ struct CodexHomeScanner: Sendable {
             .filter { $0.hasPrefix("codex-") }
             .sorted()
             .map { "~/.config/\($0)" }
+        let connectedRoot = CodexConnectedAccounts.root(homeDirectory: home)
+        let connectedHomes = listDirectories(connectedRoot.path)
+            .filter { UUID(uuidString: $0) != nil }
+            .sorted()
+            .map { connectedRoot.appendingPathComponent($0).path }
         return Self.uniqueHomes(
-            Self.configuredHomes(environment: environment, homeDirectory: home) + ["~/.config/codex", "~/.codex"] + siblingHomes,
+            Self.configuredHomes(environment: environment, homeDirectory: home) + ["~/.config/codex", "~/.codex"] + siblingHomes + connectedHomes,
             homeDirectory: home
         )
     }
