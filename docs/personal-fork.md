@@ -14,6 +14,9 @@ BUNDLE_ID=com.robinebers.openusage script/build_and_run.sh run
 The fork uses the installed app's settings domain and local history. It is ad-hoc signed rather
 than notarized; macOS can require approval in Privacy & Security, and Keychain may ask for access
 again. It has no Sparkle update feed, so an upstream update cannot overwrite the fix.
+The personal build cannot use the original developer's iCloud signing entitlement, so iCloud
+history sync is unavailable. Local usage estimates continue to work. If you rely on iCloud sync,
+keep using the original app until you choose to accept that limitation or arrange your own signing.
 Keep the original app until the fork works on your Mac.
 
 The bundled Zstandard library is pinned in `Package.resolved`; no Homebrew decoder is needed.
